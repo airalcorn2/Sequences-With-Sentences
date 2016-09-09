@@ -1,5 +1,5 @@
 # Michael A. Alcorn (malcorn@redhat.com)
-# See: https://github.com/dennybritz/rnn-tutorial-gru-lstm/blob/master/gru_theano.py.
+# See: https://github.com/dennybritz/rnn-tutorial-gru-lstm.
 
 import numpy as np
 import theano
