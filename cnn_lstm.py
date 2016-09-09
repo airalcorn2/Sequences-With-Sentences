@@ -1,3 +1,7 @@
+# Michael A. Alcorn (malcorn@redhat.com)
+# See: https://github.com/dennybritz/rnn-tutorial-gru-lstm/blob/master/gru_theano.py.
+# See: http://deeplearning.net/tutorial/rnnslu.html.
+
 import numpy as np
 import theano
 
