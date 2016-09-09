@@ -1,0 +1,157 @@
+digraph {
+    
+    newrank=true;
+    
+    rankdir=BT
+    
+    node [fixedsize=true, label=""];
+    
+    subgraph cluster_0 {
+        subgraph cluster_0_A {
+            color=white;
+            node [style=solid, color=blue4, shape=circle];
+            input_t_min_1
+        }
+        
+        subgraph cluster_0_B {
+            color=white;
+            node [style=solid, color=red2, shape=circle];
+            sentence_t_min_1
+        }
+        
+        subgraph cluster_0_C {
+            color=white;
+            node [style=solid, color=yellow3, shape=circle];
+            filters_t_min_1
+        }
+        
+        subgraph cluster_0_D {
+            color=white;
+            node [style=solid, color=purple1, shape=circle];
+            pooled_words_t_min_1
+        }
+        
+        subgraph cluster_0_E {
+            color=white;
+            node [style=solid, color=seagreen2, shape=circle];
+            hidden_t_min_1
+        }
+        
+        subgraph cluster_0_F {
+            color=white;
+            node [style=solid, color=orange2, shape=circle];
+            y_t_min_1
+        }
+        
+        label = "t_min_1"
+    }
+    
+    subgraph cluster_1 {
+        subgraph cluster_1_A {
+            color=white;
+            node [style=solid, color=blue4, shape=circle];
+            input_t
+            label = "Inputs";
+        }
+        
+        subgraph cluster_1_B {
+            color=white;
+            node [style=solid, color=red2, shape=circle];
+            sentence_t
+            label = "Sentences";
+        }
+        
+        subgraph cluster_1_C {
+            color=white;
+            node [style=solid, color=yellow3, shape=circle];
+            filters_t
+            label = "Filters";
+        }
+        
+        subgraph cluster_1_D {
+            color=white;
+            node [style=solid, color=purple1, shape=circle];
+            pooled_words_t
+            label = "Pooled Words";
+        }
+        
+        subgraph cluster_1_E {
+            color=white;
+            node [style=solid, color=seagreen2, shape=circle];
+            hidden_t
+            label = "Hidden";
+        }
+        
+        subgraph cluster_1_F {
+            color=white;
+            node [style=solid, color=orange2, shape=circle];
+            y_t
+            label = "Output";
+        }
+        
+        label = "t"
+    }
+    
+    subgraph cluster_2 {
+        subgraph cluster_2_A {
+            color=white;
+            node [style=solid, color=blue4, shape=circle];
+            input_t_plus_1
+        }
+        
+        subgraph cluster_2_B {
+            color=white;
+            node [style=solid, color=red2, shape=circle];
+            sentence_t_plus_1
+        }
+        
+        subgraph cluster_2_C {
+            color=white;
+            node [style=solid, color=yellow3, shape=circle];
+            filters_t_plus_1
+        }
+        
+        subgraph cluster_2_D {
+            color=white;
+            node [style=solid, color=purple1, shape=circle];
+            pooled_words_t_plus_1
+        }
+        
+        subgraph cluster_2_E {
+            color=white;
+            node [style=solid, color=seagreen2, shape=circle];
+            hidden_t_plus_1
+        }
+        
+        subgraph cluster_2_F {
+            color=white;
+            node [style=solid, color=orange2, shape=circle];
+            y_t_plus_1
+        }
+        
+        label = "t_plus_1"
+    }
+    
+    
+    {rank=same hidden_t_min_1 hidden_t hidden_t_plus_1}
+    
+    input_t_min_1 -> hidden_t_min_1;
+    sentence_t_min_1 -> filters_t_min_1;
+    filters_t_min_1 -> pooled_words_t_min_1;
+    pooled_words_t_min_1 -> hidden_t_min_1;
+    hidden_t_min_1 -> y_t_min_1;
+    hidden_t_min_1 -> hidden_t;
+    
+    input_t -> hidden_t;
+    sentence_t -> filters_t;
+    filters_t -> pooled_words_t;
+    pooled_words_t -> hidden_t;
+    hidden_t -> y_t;
+    hidden_t -> hidden_t_plus_1;
+    
+    input_t_plus_1 -> hidden_t_plus_1;
+    sentence_t_plus_1 -> filters_t_plus_1;
+    filters_t_plus_1 -> pooled_words_t_plus_1;
+    pooled_words_t_plus_1 -> hidden_t_plus_1;
+    hidden_t_plus_1 -> y_t_plus_1;
+}
