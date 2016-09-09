@@ -58,7 +58,7 @@ digraph {
             color=white;
             node [style=solid, color=red2, shape=circle];
             sentence_t
-            label = "Sentences";
+            label = "Sentence";
         }
         
         subgraph cluster_1_C {
