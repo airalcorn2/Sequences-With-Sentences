@@ -142,7 +142,7 @@ cache_mW = decay * mW + (1 - decay) * dW ** 2
 cache_mV = decay * mV + (1 - decay) * dV ** 2
 cache_mb = decay * mb + (1 - decay) * db ** 2
 cache_mc = decay * mc + (1 - decay) * dc ** 2
-cache_mF = decay * mF + (1 - decay) * dc ** 2
+cache_mF = decay * mF + (1 - decay) * dF ** 2
 
 sgd_step = theano.function([x, sentences, y, learning_rate,
                             theano.In(decay, value = 0.9)],
