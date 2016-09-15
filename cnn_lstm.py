@@ -22,6 +22,7 @@ step_dim = input_dim + n_filters
 
 # Initialize CNN parameters.
 F = np.array(np.random.randn(n_filters, word_dim), dtype = theano.config.floatX) * 0.01
+d = np.zeros((n_filters, 1))
 
 # Initialize RNN parameters.
 U_1 = np.random.uniform(-np.sqrt(1.0 / hidden_dim), np.sqrt(1.0 / hidden_dim), (3, hidden_dim, step_dim))
@@ -35,6 +36,7 @@ h0_l2 = np.zeros(hidden_dim)
 
 # Initialize CNN gradients.
 mF = theano.shared(name = "mF", value = np.zeros(F.shape).astype(theano.config.floatX))
+md = theano.shared(name = "md", value = np.zeros(d.shape).astype(theano.config.floatX), broadcastable = [False, True])
 
 # Initialize RNN gradients.
 mU_1 = theano.shared(name = "mU_1", value = np.zeros(U_1.shape).astype(theano.config.floatX))
@@ -43,9 +45,12 @@ mV = theano.shared(name = "mV", value = np.zeros(V.shape).astype(theano.config.f
 mW = theano.shared(name = "mW", value = np.zeros(W.shape).astype(theano.config.floatX))
 mb = theano.shared(name = "mb", value = np.zeros(b.shape).astype(theano.config.floatX))
 mc = theano.shared(name = "mc", value = 0.0)
+mh0_l1 = theano.shared(name = "mh0_l1", value = np.zeros(h0_l1.shape).astype(theano.config.floatX))
+mh0_l2 = theano.shared(name = "mh0_l2", value = np.zeros(h0_l2.shape).astype(theano.config.floatX))
 
 # Create CNN shared variables.
 F = theano.shared(name = "F", value = F.astype(theano.config.floatX))
+d = theano.shared(name = "d", value = d.astype(theano.config.floatX), broadcastable = [False, True])
 
 # Create RNN shared variables.
 U_1 = theano.shared(name = "U_1", value = U_1.astype(theano.config.floatX))
@@ -64,7 +69,7 @@ y = T.bmatrix("y")
 
 def forward_prop_step(x_t, sentence_t, s_t1_prev, s_t2_prev):
     
-    filtered_words = T.tanh(F.dot(sentence_t))
+    filtered_words = T.tanh(F.dot(sentence_t) + d)
     pooled_words = filtered_words.max(axis = 1)
     
     x_e = T.concatenate([x_t, pooled_words])
@@ -91,8 +96,8 @@ def forward_prop_step(x_t, sentence_t, s_t1_prev, s_t2_prev):
                                   sequences = [x, sentences],
                                   truncate_gradient = bptt_truncate,
                                   outputs_info = [None,
-                                                  dict(initial = T.zeros(hidden_dim)),
-                                                  dict(initial = T.zeros(hidden_dim))])
+                                                  h0_l1,
+                                                  h0_l2])
 
 
 X = []
@@ -123,26 +128,36 @@ cost = o_error
 get_cost = theano.function([x, sentences, y], cost)
 get_cost(X[0], test_text, Y[0])
 
-# Gradients.
+# CNN gradients.
+dF = T.grad(cost, F)
+dd = T.grad(cost, d)
+
+# RNN gradients.
 dU_1 = T.grad(cost, U_1)
 dU_2 = T.grad(cost, U_2)
 dW = T.grad(cost, W)
 db = T.grad(cost, b)
 dV = T.grad(cost, V)
 dc = T.grad(cost, c)
-dF = T.grad(cost, F)
+dh0_l1 = T.grad(cost, h0_l1)
+dh0_l2 = T.grad(cost, h0_l2)
 
 learning_rate = T.scalar("learning_rate")
 decay = T.scalar("decay")
 
-# rmsprop cache updates.
+# CNN rmsprop cache updates.
+cache_mF = decay * mF + (1 - decay) * dF ** 2
+cache_md = decay * md + (1 - decay) * dd ** 2
+
+# RNN rmsprop cache updates.
 cache_mU_1 = decay * mU_1 + (1 - decay) * dU_1 ** 2
 cache_mU_2 = decay * mU_2 + (1 - decay) * dU_2 ** 2
 cache_mW = decay * mW + (1 - decay) * dW ** 2
 cache_mV = decay * mV + (1 - decay) * dV ** 2
 cache_mb = decay * mb + (1 - decay) * db ** 2
 cache_mc = decay * mc + (1 - decay) * dc ** 2
-cache_mF = decay * mF + (1 - decay) * dF ** 2
+cache_mh0_l1 = decay * mh0_l1 + (1 - decay) * dh0_l1 ** 2
+cache_mh0_l2 = decay * mh0_l2 + (1 - decay) * dh0_l2 ** 2
 
 sgd_step = theano.function([x, sentences, y, learning_rate,
                             theano.In(decay, value = 0.9)],
@@ -153,12 +168,18 @@ sgd_step = theano.function([x, sentences, y, learning_rate,
                                            (b, b - learning_rate * db / T.sqrt(mb + 1e-6)),
                                            (c, c - learning_rate * dc / T.sqrt(mc + 1e-6)),
                                            (F, F - learning_rate * dF / T.sqrt(mF + 1e-6)),
+                                           (d, d - learning_rate * dd / T.sqrt(md + 1e-6)),
+                                           (h0_l1, h0_l1 - learning_rate * dh0_l1 / T.sqrt(mh0_l1 + 1e-6)),
+                                           (h0_l2, h0_l2 - learning_rate * dh0_l2 / T.sqrt(mh0_l2 + 1e-6)),
                                            (mU_1, cache_mU_1),
                                            (mU_2, cache_mU_2),
                                            (mW, cache_mW),
                                            (mV, cache_mV),
                                            (mb, cache_mb),
                                            (mc, cache_mc),
-                                           (mF, cache_mF)])
+                                           (mF, cache_mF),
+                                           (md, cache_md),
+                                           (mh0_l1, cache_mh0_l1),
+                                           (mh0_l2, cache_mh0_l2)])
 
 sgd_step(X[0], test_text, Y[0], LEARNING_RATE)
